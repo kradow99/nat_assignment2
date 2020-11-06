@@ -1,8 +1,8 @@
 /* A simple PSO algorithm and the interaction with the NN via the fitness function */
-const OMEGA = 0.7;
-const ALPHA1 = 1.0;
+const OMEGA = 0.8;
+const ALPHA1 = 1.5;
 const ALPHA2 = 1.0;
-const SWRMSZ = 10;
+const SWRMSZ = 20;
 const LIMITS = 0.5; // initialisation is within [-LIMITS,LIMITS]^dim
 
 import * as nn from "./nn";
@@ -91,7 +91,8 @@ export class Swarm {
 
 		f = getFitness(network,trainData,this.g,this.dim);
  		//return(this.particles[0].v[1]);
-		return(this.particles[0].getVelocity());
+		//return(this.particles[0].getVelocity());
+    return f;
 	}
 }
 
@@ -110,7 +111,7 @@ export function	buildSwarm(nnDim: number): Swarm {
 	return swrm
 }
 
-/* In this function neural network feedforwards each data point once */
+/* Fitness function using cross-entropy */
 export function getFitness(network: nn.Node[][], trainData: Example2D[], x: number[], dim: number): number {
 	//if (nnn === dim) return(getLoss(network, trainData));
   let nnn = nn.setWeights(network, x, dim); /* assign x to weights */
@@ -119,12 +120,29 @@ export function getFitness(network: nn.Node[][], trainData: Example2D[], x: numb
     let dataPoint = trainData[i];
     let input = constructInput(dataPoint.x, dataPoint.y);
     let output = nn.forwardProp(network, input);
-    let sigmoid = 1/(1 + Math.exp(-output));
+    let y = dataPoint.label;
+    if(y == 1) {
+      total -= Math.log(output);
+    }
+    else total -= Math.log(1-output); 
+  }
+  return total;
+}
+
+/* Fitness function using sum(|y - sigmoid(ŷ)|)  */
+export function getFitness2(network: nn.Node[][], trainData: Example2D[], x: number[], dim: number): number {
+  let nnn = nn.setWeights(network, x, dim); /* assign x to weights */
+  let total = 0;
+  for (let i = 0; i < trainData.length; i++) {
+    let dataPoint = trainData[i];
+    let input = constructInput(dataPoint.x, dataPoint.y);
+    let output = nn.forwardProp(network, input);
+    let sigmoid = 1/(1 + Math.exp(-output*1000));
     let y = dataPoint.label;
     if (y == -1) y = 0;
-    total += Math.abs(y - sigmoid)
+    total += Math.abs(y - sigmoid);
   }
-  return total/trainData.length;
+  return total;
 }
 
 /* the following ones are copies from playground.ts */
