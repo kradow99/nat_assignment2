@@ -13,7 +13,7 @@ import {
 } from "./state";
 import {Example2D} from "./dataset";
 
-let state = State.deserializeState();
+//let state = State.deserializeState();
 
 export class Particle {
 	x: number[] = [];
@@ -160,9 +160,10 @@ function getLoss(network: nn.Node[][], dataPoints: Example2D[]): number {
 function constructInput(x: number, y: number): number[] {
   let input: number[] = [];
   for (let inputName in INPUTS) {
-    if (state[inputName]) {
-      input.push(INPUTS[inputName].f(x, y));
-    }
+	input.push(INPUTS[inputName].f(x, y));
+    //if (state[inputName]) {
+     // input.push(INPUTS[inputName].f(x, y));
+    //}
   }
   return input;
 }
@@ -170,11 +171,11 @@ function constructInput(x: number, y: number): number[] {
 let INPUTS: {[name: string]: InputFeature} = {
   "x": {f: (x, y) => x, label: "X_1"},
   "y": {f: (x, y) => y, label: "X_2"},
-  "xSquared": {f: (x, y) => x * x, label: "X_1^2"},
-  "ySquared": {f: (x, y) => y * y,  label: "X_2^2"},
-  "xTimesY": {f: (x, y) => x * y, label: "X_1X_2"},
-  "sinX": {f: (x, y) => Math.sin(x), label: "sin(X_1)"},
-  "sinY": {f: (x, y) => Math.sin(y), label: "sin(X_2)"},
+  //"xSquared": {f: (x, y) => x * x, label: "X_1^2"},
+  //"ySquared": {f: (x, y) => y * y,  label: "X_2^2"},
+  //"xTimesY": {f: (x, y) => x * y, label: "X_1X_2"},
+  //"sinX": {f: (x, y) => Math.sin(x), label: "sin(X_1)"},
+  //"sinY": {f: (x, y) => Math.sin(y), label: "sin(X_2)"},
 };
 
 interface InputFeature {
