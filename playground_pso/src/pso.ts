@@ -146,7 +146,7 @@ export function getFitness2(network: nn.Node[][], trainData: Example2D[], x: num
 }
 
 /* the following ones are copies from playground.ts */
-function getLoss(network: nn.Node[][], dataPoints: Example2D[]): number {
+export function getLoss(network: nn.Node[][], dataPoints: Example2D[]): number {
   let loss = 0;
   for (let i = 0; i < dataPoints.length; i++) {
     let dataPoint = dataPoints[i];

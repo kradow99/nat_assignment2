@@ -1,5 +1,6 @@
 import * as nn from "./playground_pso/src/nn";
 import * as pso from "./playground_pso/src/pso";
+import * as ga from "./playground_pso/src/ga";
 import * as dataset from "./playground_pso/src/dataset";
 import {Example2D} from "./playground_pso/src/dataset";
 import {
@@ -65,7 +66,9 @@ function getLoss(network: nn.Node[][], dataPoints: Example2D[]): number {
 const NUM_SAMPLES_CLASSIFY = 500;
 const percTrainData = 0.50;
 
-// variable parameters
+// TASK1: PSO
+
+// parameters
 let networkShape = [2, 2, 1];
 let activation = nn.Activations.TANH;
 let outputActivation = nn.Activations.SIGMOID;
@@ -95,4 +98,15 @@ for (var t = 0; t < 20; t++) {
     console.log(lossTrain, lossTest);
 }
 
+// TASK 2: GA
+
+// Split training data again
+splitIndex = Math.floor(trainData.length * percTrainData);
+let trainDataGA = trainData.slice(0, splitIndex);
+let pop = ga.buildPop(1, [2], [4], 'pso');
+ga.oneStepGA(pop, trainDataGA, trainData);
+let bestConfig = pop.getBestConfig(trainDataGA, trainData);
+console.log(bestConfig);
+
+// Run a final training with the best config
 

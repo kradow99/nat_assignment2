@@ -1,6 +1,6 @@
 "use strict";
 exports.__esModule = true;
-exports.getFitness2 = exports.getFitness = exports.buildSwarm = exports.Swarm = exports.Particle = void 0;
+exports.getLoss = exports.getFitness2 = exports.getFitness = exports.buildSwarm = exports.Swarm = exports.Particle = void 0;
 /* A simple PSO algorithm and the interaction with the NN via the fitness function */
 var OMEGA = 0.8;
 var ALPHA1 = 1.5;
@@ -143,6 +143,7 @@ function getLoss(network, dataPoints) {
     }
     return loss / dataPoints.length;
 }
+exports.getLoss = getLoss;
 function constructInput(x, y) {
     var input = [];
     for (var inputName in INPUTS) {

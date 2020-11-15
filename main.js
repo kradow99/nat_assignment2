@@ -2,6 +2,7 @@
 exports.__esModule = true;
 var nn = require("./playground_pso/src/nn");
 var pso = require("./playground_pso/src/pso");
+var ga = require("./playground_pso/src/ga");
 var dataset = require("./playground_pso/src/dataset");
 // Copies from ./playground_pso/src/playground.ts
 function constructInputIds() {
@@ -49,7 +50,8 @@ function getLoss(network, dataPoints) {
 // Constant Parameters
 var NUM_SAMPLES_CLASSIFY = 500;
 var percTrainData = 0.50;
-// variable parameters
+// TASK1: PSO
+// parameters
 var networkShape = [2, 2, 1];
 var activation = nn.Activations.TANH;
 var outputActivation = nn.Activations.SIGMOID;
@@ -71,3 +73,11 @@ for (var t = 0; t < 20; t++) {
     onePSOStep();
     console.log(lossTrain, lossTest);
 }
+// TASK 2: GA
+// Split training data again
+splitIndex = Math.floor(trainData.length * percTrainData);
+var trainDataGA = trainData.slice(0, splitIndex);
+var pop = ga.buildPop(1, [2], [4], 'pso');
+ga.oneStepGA(pop, trainDataGA, trainData);
+var bestConfig = pop.getBestConfig(trainDataGA, trainData);
+console.log(bestConfig);
