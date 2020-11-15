@@ -3,12 +3,13 @@ const POPSIZE = 5;
 const CROSSPROB = 0.7;
 const MUTPROB = 0.01;
 const ELITISM = true;
-const N_ITER = 10; // this is for the low leveel algorithm not for the GA
+const N_ITER = 100; // this is for the low leveel algorithm not for the GA
 const MAX_COST = 1;
 const INPUTDIM = 2;
 import * as pso from "./pso";
 import * as nn from "./nn";
 import {Example2D} from "./dataset";
+import * as aux from "./aux";
 
 // Auxiliar functions
 function getRandomInt(min, max): number {
@@ -21,7 +22,7 @@ export function buildNNFromGA(config: number[]): nn.Node[][]{
     let outputActivation = nn.Activations.SIGMOID;
     let regularization = null;
     let shape = [INPUTDIM].concat(config).concat([1]); // input and output dimensions are fixed
-    let network = nn.buildNetwork(shape, activation, outputActivation, regularization, constructInputIds());
+    let network = nn.buildNetwork(shape, activation, outputActivation, regularization, aux.constructInputIds());
     return network;
 }
 export function getFitnessPSO(config: number[], n_iter: number, trainData: Example2D[], valData: Example2D[]): number{
@@ -32,7 +33,7 @@ export function getFitnessPSO(config: number[], n_iter: number, trainData: Examp
         swarm.updateSwarm(network,trainData);
     }
     // Compute the loss.
-    let valLoss = pso.getLoss(network, valData);
+    let valLoss = aux.getLoss(network, valData);
     return MAX_COST - valLoss;
 
 }
@@ -51,9 +52,9 @@ export function getFitnessNN(config: number[], n_iter: number, trainData: Exampl
     
     let network = buildNNFromGA(config);
     for (let i = 0; i <= n_iter; i++){
-        oneStepNN(trainData, valData, network);
+        aux.oneStepNN(trainData, valData, network);
     }
-    let valLoss = pso.getLoss(network, valData);
+    let valLoss = aux.getLoss(network, valData);
     return MAX_COST - valLoss;
 }
 
@@ -66,51 +67,6 @@ export function evaluatePopFitnessNN(individuals: Individual[], n_iter: number,
     }
     return fitness_values;
 }
-
-// Copies from playground
-function oneStepNN(trainData: Example2D[], valData: Example2D[], network: nn.Node[][]): void {
-    trainData.forEach((point, i) => {
-      let input = constructInput(point.x, point.y);
-      nn.forwardProp(network, input);
-      nn.backProp(network, point.label, nn.Errors.SQUARE);
-      nn.updateWeights(network, 0.03, 0); // For now predefined learning rate and regularization
-    });
-}
-
-function constructInput(x: number, y: number): number[] {
-    let input: number[] = [];
-    for (let inputName in INPUTS) {
-      input.push(INPUTS[inputName].f(x, y));
-      //if (state[inputName]) {
-       // input.push(INPUTS[inputName].f(x, y));
-      //}
-    }
-    return input;
-}
-
-function constructInputIds(): string[] {
-    let result: string[] = [];
-    for (let inputName in INPUTS) {
-        result.push(inputName);
-    }
-    return result;
-}
-  
-let INPUTS: {[name: string]: InputFeature} = {
-    "x": {f: (x, y) => x, label: "X_1"},
-    "y": {f: (x, y) => y, label: "X_2"},
-    //"xSquared": {f: (x, y) => x * x, label: "X_1^2"},
-    //"ySquared": {f: (x, y) => y * y,  label: "X_2^2"},
-    //"xTimesY": {f: (x, y) => x * y, label: "X_1X_2"},
-    //"sinX": {f: (x, y) => Math.sin(x), label: "sin(X_1)"},
-    //"sinY": {f: (x, y) => Math.sin(y), label: "sin(X_2)"},
-};
-  
-  interface InputFeature {
-    f: (x: number, y: number) => number;
-    label?: string;
-}
-
 
 // Class for the individual of the population
 export class Individual {
@@ -267,8 +223,8 @@ export class Population {
         let bestIndividual = this.individuals[0]
         console.log(popFitness);
         console.log("Fitness: ", popFitness[tempPop.indexOf(bestIndividual)]);
-
-        return bestIndividual.config;
+        let shape = [INPUTDIM].concat(bestIndividual.config).concat([1])
+        return shape;
     }
 
 }

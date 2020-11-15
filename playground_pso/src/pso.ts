@@ -12,6 +12,7 @@ import {
   getKeyFromValue,
 } from "./state";
 import {Example2D} from "./dataset";
+import * as aux from "./aux";
 
 //let state = State.deserializeState();
 
@@ -113,12 +114,12 @@ export function	buildSwarm(nnDim: number): Swarm {
 
 /* Fitness function using cross-entropy */
 export function getFitness(network: nn.Node[][], trainData: Example2D[], x: number[], dim: number): number {
-	//if (nnn === dim) return(getLoss(network, trainData));
+	//if (nnn === dim) return(aux.getLoss(network, trainData));
   let nnn = nn.setWeights(network, x, dim); /* assign x to weights */
   let total = 0;
   for (let i = 0; i < trainData.length; i++) {
     let dataPoint = trainData[i];
-    let input = constructInput(dataPoint.x, dataPoint.y);
+    let input = aux.constructInput(dataPoint.x, dataPoint.y);
     let output = nn.forwardProp(network, input);
     let y = dataPoint.label;
     if(y == 1) {
@@ -135,7 +136,7 @@ export function getFitness2(network: nn.Node[][], trainData: Example2D[], x: num
   let total = 0;
   for (let i = 0; i < trainData.length; i++) {
     let dataPoint = trainData[i];
-    let input = constructInput(dataPoint.x, dataPoint.y);
+    let input = aux.constructInput(dataPoint.x, dataPoint.y);
     let output = nn.forwardProp(network, input);
     let sigmoid = 1/(1 + Math.exp(-output*1000));
     let y = dataPoint.label;
@@ -143,42 +144,4 @@ export function getFitness2(network: nn.Node[][], trainData: Example2D[], x: num
     total += Math.abs(y - sigmoid);
   }
   return total;
-}
-
-/* the following ones are copies from playground.ts */
-export function getLoss(network: nn.Node[][], dataPoints: Example2D[]): number {
-  let loss = 0;
-  for (let i = 0; i < dataPoints.length; i++) {
-    let dataPoint = dataPoints[i];
-    let input = constructInput(dataPoint.x, dataPoint.y);
-    let output = nn.forwardProp(network, input);
-    loss += nn.Errors.SQUARE.error(output, dataPoint.label);
-  }
-  return loss / dataPoints.length;
-}
-
-function constructInput(x: number, y: number): number[] {
-  let input: number[] = [];
-  for (let inputName in INPUTS) {
-	input.push(INPUTS[inputName].f(x, y));
-    //if (state[inputName]) {
-     // input.push(INPUTS[inputName].f(x, y));
-    //}
-  }
-  return input;
-}
-
-let INPUTS: {[name: string]: InputFeature} = {
-  "x": {f: (x, y) => x, label: "X_1"},
-  "y": {f: (x, y) => y, label: "X_2"},
-  //"xSquared": {f: (x, y) => x * x, label: "X_1^2"},
-  //"ySquared": {f: (x, y) => y * y,  label: "X_2^2"},
-  //"xTimesY": {f: (x, y) => x * y, label: "X_1X_2"},
-  //"sinX": {f: (x, y) => Math.sin(x), label: "sin(X_1)"},
-  //"sinY": {f: (x, y) => Math.sin(y), label: "sin(X_2)"},
-};
-
-interface InputFeature {
-  f: (x: number, y: number) => number;
-  label?: string;
 }

@@ -6,11 +6,12 @@ var POPSIZE = 5;
 var CROSSPROB = 0.7;
 var MUTPROB = 0.01;
 var ELITISM = true;
-var N_ITER = 10; // this is for the low leveel algorithm not for the GA
+var N_ITER = 100; // this is for the low leveel algorithm not for the GA
 var MAX_COST = 1;
 var INPUTDIM = 2;
 var pso = require("./pso");
 var nn = require("./nn");
+var aux = require("./aux");
 // Auxiliar functions
 function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min)) + min;
@@ -20,7 +21,7 @@ function buildNNFromGA(config) {
     var outputActivation = nn.Activations.SIGMOID;
     var regularization = null;
     var shape = [INPUTDIM].concat(config).concat([1]); // input and output dimensions are fixed
-    var network = nn.buildNetwork(shape, activation, outputActivation, regularization, constructInputIds());
+    var network = nn.buildNetwork(shape, activation, outputActivation, regularization, aux.constructInputIds());
     return network;
 }
 exports.buildNNFromGA = buildNNFromGA;
@@ -31,7 +32,7 @@ function getFitnessPSO(config, n_iter, trainData, valData) {
         swarm.updateSwarm(network, trainData);
     }
     // Compute the loss.
-    var valLoss = pso.getLoss(network, valData);
+    var valLoss = aux.getLoss(network, valData);
     return MAX_COST - valLoss;
 }
 exports.getFitnessPSO = getFitnessPSO;
@@ -47,9 +48,9 @@ exports.evaluatePopFitnessPSO = evaluatePopFitnessPSO;
 function getFitnessNN(config, n_iter, trainData, valData) {
     var network = buildNNFromGA(config);
     for (var i = 0; i <= n_iter; i++) {
-        oneStepNN(trainData, valData, network);
+        aux.oneStepNN(trainData, valData, network);
     }
-    var valLoss = pso.getLoss(network, valData);
+    var valLoss = aux.getLoss(network, valData);
     return MAX_COST - valLoss;
 }
 exports.getFitnessNN = getFitnessNN;
@@ -62,36 +63,6 @@ function evaluatePopFitnessNN(individuals, n_iter, trainData, valData) {
     return fitness_values;
 }
 exports.evaluatePopFitnessNN = evaluatePopFitnessNN;
-// Copies from playground
-function oneStepNN(trainData, valData, network) {
-    trainData.forEach(function (point, i) {
-        var input = constructInput(point.x, point.y);
-        nn.forwardProp(network, input);
-        nn.backProp(network, point.label, nn.Errors.SQUARE);
-        nn.updateWeights(network, 0.03, 0); // For now predefined learning rate and regularization
-    });
-}
-function constructInput(x, y) {
-    var input = [];
-    for (var inputName in INPUTS) {
-        input.push(INPUTS[inputName].f(x, y));
-        //if (state[inputName]) {
-        // input.push(INPUTS[inputName].f(x, y));
-        //}
-    }
-    return input;
-}
-function constructInputIds() {
-    var result = [];
-    for (var inputName in INPUTS) {
-        result.push(inputName);
-    }
-    return result;
-}
-var INPUTS = {
-    "x": { f: function (x, y) { return x; }, label: "X_1" },
-    "y": { f: function (x, y) { return y; }, label: "X_2" }
-};
 // Class for the individual of the population
 var Individual = /** @class */ (function () {
     function Individual(dim, min_ranges, max_ranges) {
@@ -230,7 +201,8 @@ var Population = /** @class */ (function () {
         var bestIndividual = this.individuals[0];
         console.log(popFitness);
         console.log("Fitness: ", popFitness[tempPop.indexOf(bestIndividual)]);
-        return bestIndividual.config;
+        var shape = [INPUTDIM].concat(bestIndividual.config).concat([1]);
+        return shape;
     };
     return Population;
 }());

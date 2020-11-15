@@ -1,6 +1,6 @@
 "use strict";
 exports.__esModule = true;
-exports.getLoss = exports.getFitness2 = exports.getFitness = exports.buildSwarm = exports.Swarm = exports.Particle = void 0;
+exports.getFitness2 = exports.getFitness = exports.buildSwarm = exports.Swarm = exports.Particle = void 0;
 /* A simple PSO algorithm and the interaction with the NN via the fitness function */
 var OMEGA = 0.8;
 var ALPHA1 = 1.5;
@@ -8,6 +8,7 @@ var ALPHA2 = 1.0;
 var SWRMSZ = 20;
 var LIMITS = 0.5; // initialisation is within [-LIMITS,LIMITS]^dim
 var nn = require("./nn");
+var aux = require("./aux");
 //let state = State.deserializeState();
 var Particle = /** @class */ (function () {
     function Particle(dim, limits) {
@@ -98,12 +99,12 @@ function buildSwarm(nnDim) {
 exports.buildSwarm = buildSwarm;
 /* Fitness function using cross-entropy */
 function getFitness(network, trainData, x, dim) {
-    //if (nnn === dim) return(getLoss(network, trainData));
+    //if (nnn === dim) return(aux.getLoss(network, trainData));
     var nnn = nn.setWeights(network, x, dim); /* assign x to weights */
     var total = 0;
     for (var i = 0; i < trainData.length; i++) {
         var dataPoint = trainData[i];
-        var input = constructInput(dataPoint.x, dataPoint.y);
+        var input = aux.constructInput(dataPoint.x, dataPoint.y);
         var output = nn.forwardProp(network, input);
         var y = dataPoint.label;
         if (y == 1) {
@@ -121,7 +122,7 @@ function getFitness2(network, trainData, x, dim) {
     var total = 0;
     for (var i = 0; i < trainData.length; i++) {
         var dataPoint = trainData[i];
-        var input = constructInput(dataPoint.x, dataPoint.y);
+        var input = aux.constructInput(dataPoint.x, dataPoint.y);
         var output = nn.forwardProp(network, input);
         var sigmoid = 1 / (1 + Math.exp(-output * 1000));
         var y = dataPoint.label;
@@ -132,29 +133,3 @@ function getFitness2(network, trainData, x, dim) {
     return total;
 }
 exports.getFitness2 = getFitness2;
-/* the following ones are copies from playground.ts */
-function getLoss(network, dataPoints) {
-    var loss = 0;
-    for (var i = 0; i < dataPoints.length; i++) {
-        var dataPoint = dataPoints[i];
-        var input = constructInput(dataPoint.x, dataPoint.y);
-        var output = nn.forwardProp(network, input);
-        loss += nn.Errors.SQUARE.error(output, dataPoint.label);
-    }
-    return loss / dataPoints.length;
-}
-exports.getLoss = getLoss;
-function constructInput(x, y) {
-    var input = [];
-    for (var inputName in INPUTS) {
-        input.push(INPUTS[inputName].f(x, y));
-        //if (state[inputName]) {
-        // input.push(INPUTS[inputName].f(x, y));
-        //}
-    }
-    return input;
-}
-var INPUTS = {
-    "x": { f: function (x, y) { return x; }, label: "X_1" },
-    "y": { f: function (x, y) { return y; }, label: "X_2" }
-};
