@@ -38,7 +38,12 @@ function constructInputIds() {
 exports.constructInputIds = constructInputIds;
 var INPUTS = {
     "x": { f: function (x, y) { return x; }, label: "X_1" },
-    "y": { f: function (x, y) { return y; }, label: "X_2" }
+    "y": { f: function (x, y) { return y; }, label: "X_2" },
+    //"xSquared": {f: (x, y) => x * x, label: "X_1^2"},
+    //"ySquared": {f: (x, y) => y * y,  label: "X_2^2"},
+    "xTimesY": { f: function (x, y) { return x * y; }, label: "X_1X_2" },
+    "sinX": { f: function (x, y) { return Math.sin(x); }, label: "sin(X_1)" },
+    "sinY": { f: function (x, y) { return Math.sin(y); }, label: "sin(X_2)" }
 };
 function runPSO(n_iter, trainData, testData, networkShape) {
     // Define activation functions

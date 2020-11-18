@@ -40,9 +40,9 @@ let INPUTS: {[name: string]: InputFeature} = {
     "y": {f: (x, y) => y, label: "X_2"},
     //"xSquared": {f: (x, y) => x * x, label: "X_1^2"},
     //"ySquared": {f: (x, y) => y * y,  label: "X_2^2"},
-    //"xTimesY": {f: (x, y) => x * y, label: "X_1X_2"},
-    //"sinX": {f: (x, y) => Math.sin(x), label: "sin(X_1)"},
-    //"sinY": {f: (x, y) => Math.sin(y), label: "sin(X_2)"},
+    "xTimesY": {f: (x, y) => x * y, label: "X_1X_2"},
+    "sinX": {f: (x, y) => Math.sin(x), label: "sin(X_1)"},
+    "sinY": {f: (x, y) => Math.sin(y), label: "sin(X_2)"},
 };
   
   interface InputFeature {
@@ -60,7 +60,7 @@ export function runPSO(n_iter: number, trainData: Example2D[], testData: Example
         let network = nn.buildNetwork(networkShape, activation, 
             outputActivation,regularization, constructInputIds());
         let swarm = pso.buildSwarm(nn.countWeights(network));
-        for (var t = 0; t < 100; t++) {
+        for (var t = 0; t < n_iter; t++) {
             let losses = onePSOStep(swarm, network, trainData, testData); 
             console.log("Train Loss: ", losses[0], "    Test Loss: ", losses[1]);
         }
