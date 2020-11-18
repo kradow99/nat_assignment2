@@ -2,6 +2,7 @@
 exports.__esModule = true;
 exports.oneStepGA = exports.buildPop = exports.Population = exports.Individual = exports.evaluatePopFitnessNN = exports.getFitnessNN = exports.evaluatePopFitnessPSO = exports.getFitnessPSO = exports.buildNNFromGA = void 0;
 /* A simple genetic algorithm and the interaction with the PSO/NN via the fitness function */
+// Constant parametetrs
 var POPSIZE = 5;
 var CROSSPROB = 0.7;
 var MUTPROB = 0.01;
@@ -12,10 +13,6 @@ var INPUTDIM = 2;
 var pso = require("./pso");
 var nn = require("./nn");
 var aux = require("./aux");
-// Auxiliar functions
-function getRandomInt(min, max) {
-    return Math.floor(Math.random() * (max - min)) + min;
-}
 function buildNNFromGA(config) {
     var activation = nn.Activations.TANH;
     var outputActivation = nn.Activations.SIGMOID;
@@ -73,13 +70,13 @@ var Individual = /** @class */ (function () {
         this.min_ranges = min_ranges;
         this.max_ranges = max_ranges;
         for (var i = 0; i < this.dim; i++) {
-            this.config.push(getRandomInt(this.min_ranges[i], this.max_ranges[i]));
+            this.config.push(aux.getRandomInt(this.min_ranges[i], this.max_ranges[i]));
         }
     }
     Individual.prototype.mutate = function () {
         for (var chromosome in this.config) {
             if (Math.random() < MUTPROB) {
-                this.config[chromosome] = getRandomInt(this.min_ranges[chromosome], this.max_ranges[chromosome]);
+                this.config[chromosome] = aux.getRandomInt(this.min_ranges[chromosome], this.max_ranges[chromosome]);
             }
         }
     };
@@ -160,12 +157,12 @@ var Population = /** @class */ (function () {
             var parent1 = _a[_i];
             var parent2 = parentPool[Math.floor(Math.random() * parentPool.length)];
             if (Math.random() < CROSSPROB) {
-                var crossOverPoint = getRandomInt(0, parent1.dim);
-                for (var chromosome = crossOverPoint; chromosome <= parent1.dim; chromosome++) {
-                    var temp1 = parent1[chromosome];
-                    var temp2 = parent2[chromosome];
-                    parent1[chromosome] = temp2;
-                    parent2[chromosome] = temp1;
+                var crossOverPoint = aux.getRandomInt(0, parent1.dim - 1);
+                for (var chromosome = crossOverPoint; chromosome < parent1.dim; chromosome++) {
+                    var temp1 = parent1.config[chromosome];
+                    var temp2 = parent2.config[chromosome];
+                    parent1.config[chromosome] = temp2;
+                    parent2.config[chromosome] = temp1;
                 }
             }
             intermediatePop.push(parent1);

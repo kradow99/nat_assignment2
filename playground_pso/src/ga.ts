@@ -1,4 +1,5 @@
 /* A simple genetic algorithm and the interaction with the PSO/NN via the fitness function */
+// Constant parametetrs
 const POPSIZE = 5;
 const CROSSPROB = 0.7;
 const MUTPROB = 0.01;
@@ -10,11 +11,6 @@ import * as pso from "./pso";
 import * as nn from "./nn";
 import {Example2D} from "./dataset";
 import * as aux from "./aux";
-
-// Auxiliar functions
-function getRandomInt(min, max): number {
-    return Math.floor(Math.random() * (max - min)) + min;
-}
 
 export function buildNNFromGA(config: number[]): nn.Node[][]{
 
@@ -80,14 +76,14 @@ export class Individual {
         this.min_ranges = min_ranges;
         this.max_ranges = max_ranges;
         for(let i = 0; i < this.dim; i++) {
-            this.config.push(getRandomInt(this.min_ranges[i], this.max_ranges[i]))
+            this.config.push(aux.getRandomInt(this.min_ranges[i], this.max_ranges[i]))
         } 
     }
 
     mutate() {
         for(let chromosome in this.config){
             if (Math.random() < MUTPROB) {
-                this.config[chromosome] = getRandomInt(this.min_ranges[chromosome], this.max_ranges[chromosome])
+                this.config[chromosome] = aux.getRandomInt(this.min_ranges[chromosome], this.max_ranges[chromosome])
             }
         }
     }
@@ -95,9 +91,6 @@ export class Individual {
 
 export class Population {
     individuals: Individual[] = [];
-    //mutProb: number;
-    //crossProb: number;
-    //elitism: boolean;
     lowLevelAlgo: string; // 'pso' or 'gd'
     totalFit: number;
     bestFit: number;
@@ -178,12 +171,12 @@ export class Population {
         for (let parent1 of this.individuals.slice(0, midPoint)) {
             let parent2 = parentPool[Math.floor(Math.random()*parentPool.length)];
             if (Math.random() < CROSSPROB){
-                let crossOverPoint = getRandomInt(0, parent1.dim);
-                for(let chromosome = crossOverPoint; chromosome <= parent1.dim; chromosome++){
-                    let temp1 = parent1[chromosome];
-                    let temp2 = parent2[chromosome];
-                    parent1[chromosome] = temp2;
-                    parent2[chromosome] = temp1;
+                let crossOverPoint = aux.getRandomInt(0, parent1.dim - 1);
+                for(let chromosome = crossOverPoint; chromosome < parent1.dim; chromosome++){
+                    let temp1 = parent1.config[chromosome];
+                    let temp2 = parent2.config[chromosome];
+                    parent1.config[chromosome] = temp2;
+                    parent2.config[chromosome] = temp1;
                 }                 
             }
             intermediatePop.push(parent1);
