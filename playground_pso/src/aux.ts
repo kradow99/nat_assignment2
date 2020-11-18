@@ -3,6 +3,10 @@ import * as nn from "./nn";
 import * as pso from "./pso";
 import {Example2D} from "./dataset";
 
+export function getRandomInt(min: number, max: number): number {
+    return Math.floor(Math.random() * (max - min)) + min;
+}
+
 export function oneStepNN(trainData: Example2D[], valData: Example2D[], network: nn.Node[][]): void {
     trainData.forEach((point, i) => {
       let input = constructInput(point.x, point.y);

@@ -1,6 +1,7 @@
 import * as nn from "./playground_pso/src/nn";
 import * as pso from "./playground_pso/src/pso";
 import * as ga from "./playground_pso/src/ga";
+import * as gp from "./playground_pso/src/gp";
 import * as aux from "./playground_pso/src/aux";
 import * as dataset from "./playground_pso/src/dataset";
 import {Example2D} from "./playground_pso/src/dataset";
@@ -45,3 +46,8 @@ console.log(bestConfig);
 // Run a final training with the best config
 
 // TASK 3: GP
+
+let popGP = gp.buildPop('gd');
+console.log(popGP);
+gp.oneStepGP(popGP, trainDataGA, trainData, true);
+console.log(popGP);

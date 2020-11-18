@@ -1,6 +1,7 @@
 "use strict";
 exports.__esModule = true;
 var ga = require("./playground_pso/src/ga");
+var gp = require("./playground_pso/src/gp");
 var aux = require("./playground_pso/src/aux");
 var dataset = require("./playground_pso/src/dataset");
 // Constant Parameters
@@ -27,3 +28,7 @@ var bestConfig = pop.getBestConfig(trainDataGA, trainData);
 console.log(bestConfig);
 // Run a final training with the best config
 // TASK 3: GP
+var popGP = gp.buildPop('gd');
+console.log(popGP);
+gp.oneStepGP(popGP, trainDataGA, trainData, true);
+console.log(popGP);

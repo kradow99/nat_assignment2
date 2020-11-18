@@ -1,9 +1,13 @@
 "use strict";
 exports.__esModule = true;
-exports.getLoss = exports.runPSO = exports.constructInputIds = exports.constructInput = exports.oneStepNN = void 0;
+exports.getLoss = exports.runPSO = exports.constructInputIds = exports.constructInput = exports.oneStepNN = exports.getRandomInt = void 0;
 // Auxiliary functions to avoid duplicating code across the modeules
 var nn = require("./nn");
 var pso = require("./pso");
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min)) + min;
+}
+exports.getRandomInt = getRandomInt;
 function oneStepNN(trainData, valData, network) {
     trainData.forEach(function (point, i) {
         var input = constructInput(point.x, point.y);
