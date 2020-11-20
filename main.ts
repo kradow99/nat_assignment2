@@ -20,15 +20,17 @@ const percTrainData = 0.50;
 
 
 
-let data = dataset.classifySpiralData(NUM_SAMPLES_CLASSIFY, 0);
-dataset.shuffle(data);
+//let data = dataset.classifySpiralData(NUM_SAMPLES_CLASSIFY, 0);
+//dataset.shuffle(data);
+let data = aux.loadDataFile('./two_spirals.dat')
+//console.log(data)
 // Split into train and test data.
 let splitIndex = Math.floor(data.length * percTrainData);
 let trainData = data.slice(0, splitIndex);
 let testData = data.slice(splitIndex);
 
 // variable parameters (the current values are only to test the code, we should change them for the task)
-let n_iter = 25;
+let n_iter = 1000;
 let networkShape = [2, 2, 1];
 
 let swarm = aux.runPSO(n_iter, trainData, testData, networkShape)

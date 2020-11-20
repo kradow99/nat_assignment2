@@ -2,7 +2,25 @@
 import * as nn from "./nn";
 import * as pso from "./pso";
 import {Example2D} from "./dataset";
+import * as fs from 'fs'
 
+export function loadDataFile(path:string): Example2D[] {
+  let points: Example2D[] = [];
+  let text = fs.readFileSync(path).toString('utf-8');
+  let textByLine = text.split("\n");
+  for (let i = 0; i < textByLine.length-1; i++) {
+    let line = textByLine[i].replace(/  /g, ' ');
+    if (line[0] == ' ') {
+      line = line.substring(1)
+    }
+    let lineSplitted = line.split(' ');
+    let x = parseFloat(lineSplitted[0]);
+    let y = parseFloat(lineSplitted[1]);
+    let label = parseFloat(lineSplitted[2]);
+    points.push({x, y, label});
+  }
+  return points;
+}
 export function getRandomInt(min: number, max: number): number {
     return Math.floor(Math.random() * (max - min)) + min;
 }
@@ -40,11 +58,11 @@ let INPUTS: {[name: string]: InputFeature} = {
     "y": {f: (x, y) => y, label: "X_2"},
     //"xSquared": {f: (x, y) => x * x, label: "X_1^2"},
     //"ySquared": {f: (x, y) => y * y,  label: "X_2^2"},
-    "xTimesY": {f: (x, y) => x * y, label: "X_1X_2"},
-    "sinX": {f: (x, y) => Math.sin(x), label: "sin(X_1)"},
-    "sinY": {f: (x, y) => Math.sin(y), label: "sin(X_2)"},
+    //"xTimesY": {f: (x, y) => x * y, label: "X_1X_2"},
+    //"sinX": {f: (x, y) => Math.sin(x), label: "sin(X_1)"},
+    //"sinY": {f: (x, y) => Math.sin(y), label: "sin(X_2)"},
 };
-  
+
   interface InputFeature {
     f: (x: number, y: number) => number;
     label?: string;
@@ -52,17 +70,19 @@ let INPUTS: {[name: string]: InputFeature} = {
 
 export function runPSO(n_iter: number, trainData: Example2D[], testData: Example2D[],
     networkShape: number[]): pso.Swarm {
-        
+
         // Define activation functions
         let activation = nn.Activations.TANH;
         let outputActivation = nn.Activations.SIGMOID;
         let regularization = null;
-        let network = nn.buildNetwork(networkShape, activation, 
+        let network = nn.buildNetwork(networkShape, activation,
             outputActivation,regularization, constructInputIds());
         let swarm = pso.buildSwarm(nn.countWeights(network));
         for (var t = 0; t < n_iter; t++) {
-            let losses = onePSOStep(swarm, network, trainData, testData); 
-            console.log("Train Loss: ", losses[0], "    Test Loss: ", losses[1]);
+            let losses = onePSOStep(swarm, network, trainData, testData);
+            if (t % 50 == 0) {
+              console.log("Train Loss: ", losses[0].toFixed(4), "    Test Loss: ", losses[1].toFixed(4), '   Iter: ', t);
+            }
         }
 
         return swarm;

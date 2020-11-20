@@ -248,7 +248,7 @@ export class State {
     if (state.seed == null) {
       state.seed = Math.random().toFixed(5);
     }
-    Math.seedrandom(state.seed);
+    //Math.seedrandom(state.seed);
     return state;
   }
 
