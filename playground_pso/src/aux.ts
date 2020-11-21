@@ -17,6 +17,7 @@ export function loadDataFile(path:string): Example2D[] {
     let x = parseFloat(lineSplitted[0]);
     let y = parseFloat(lineSplitted[1]);
     let label = parseFloat(lineSplitted[2]);
+    if (label == 0) label = -1;
     points.push({x, y, label});
   }
   return points;
@@ -56,11 +57,11 @@ export function constructInputIds(): string[] {
 let INPUTS: {[name: string]: InputFeature} = {
     "x": {f: (x, y) => x, label: "X_1"},
     "y": {f: (x, y) => y, label: "X_2"},
-    //"xSquared": {f: (x, y) => x * x, label: "X_1^2"},
-    //"ySquared": {f: (x, y) => y * y,  label: "X_2^2"},
+    "xSquared": {f: (x, y) => x * x, label: "X_1^2"},
+    "ySquared": {f: (x, y) => y * y,  label: "X_2^2"},
     //"xTimesY": {f: (x, y) => x * y, label: "X_1X_2"},
-    //"sinX": {f: (x, y) => Math.sin(x), label: "sin(X_1)"},
-    //"sinY": {f: (x, y) => Math.sin(y), label: "sin(X_2)"},
+    "sinX": {f: (x, y) => Math.sin(x), label: "sin(X_1)"},
+    "sinY": {f: (x, y) => Math.sin(y), label: "sin(X_2)"},
 };
 
   interface InputFeature {
@@ -73,15 +74,15 @@ export function runPSO(n_iter: number, trainData: Example2D[], testData: Example
 
         // Define activation functions
         let activation = nn.Activations.TANH;
-        let outputActivation = nn.Activations.SIGMOID;
+        let outputActivation = nn.Activations.TANH;
         let regularization = null;
         let network = nn.buildNetwork(networkShape, activation,
             outputActivation,regularization, constructInputIds());
         let swarm = pso.buildSwarm(nn.countWeights(network));
-        for (var t = 0; t < n_iter; t++) {
+        for (var t = 0; t < n_iter+1; t++) {
             let losses = onePSOStep(swarm, network, trainData, testData);
             if (t % 50 == 0) {
-              console.log("Train Loss: ", losses[0].toFixed(4), "    Test Loss: ", losses[1].toFixed(4), '   Iter: ', t);
+              console.log("Fitness:", losses[0].toFixed(4), "Train Loss:", losses[1].toFixed(4), "    Test Loss:", losses[2].toFixed(4), "   Iter:", t);
             }
         }
 
@@ -93,11 +94,11 @@ export function runPSO(n_iter: number, trainData: Example2D[], testData: Example
 
 function onePSOStep(swarm: pso.Swarm, network: nn.Node[][], trainData: Example2D[], testData: Example2D[]): number[] {
 
-    swarm.updateSwarm(network, trainData); /* changes the network to the gbest network from the swarm */
+    let fitness = swarm.updateSwarm(network, trainData); /* changes the network to the gbest network from the swarm */
     // Compute the loss.
     let lossTrain = getLoss(network, trainData);
     let lossTest = getLoss(network, testData);
-    return [lossTrain, lossTest];
+    return [fitness, lossTrain, lossTest];
 }
 
 export function getLoss(network: nn.Node[][], dataPoints: Example2D[]): number {
@@ -106,7 +107,8 @@ export function getLoss(network: nn.Node[][], dataPoints: Example2D[]): number {
       let dataPoint = dataPoints[i];
       let input = constructInput(dataPoint.x, dataPoint.y);
       let output = nn.forwardProp(network, input);
-      loss += nn.Errors.SQUARE.error(output, dataPoint.label);
+      let label = dataPoint.label;
+      loss += nn.Errors.SQUARE.error(output, label);
     }
     return loss / dataPoints.length;
 }

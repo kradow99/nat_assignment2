@@ -1,8 +1,4 @@
 /* A simple PSO algorithm and the interaction with the NN via the fitness function */
-const OMEGA = 0.8;
-const ALPHA1 = 0.5;
-const ALPHA2 = 0.5;
-const SWRMSZ = 10;
 const LIMITS = 0.5; // initialisation is within [-LIMITS,LIMITS]^dim
 
 import * as nn from "./nn";
@@ -22,8 +18,18 @@ export class Particle {
 	p: number[] = [];
 	fp: number;
 	d: number;
-	constructor(dim: number, limits: number) {
+  omega: number;
+  alpha1: number;
+  alpha2: number;
+  swrmsz: number;
+
+	constructor(dim: number, o: number, a1: number, a2: number, sw: number, limits: number) {
 		this.d = dim;
+    this.omega = o;
+    this.alpha1 = a1;
+    this.alpha2 = a2;
+    this.swrmsz = sw;
+
 		for (let i = 0; i < this.d; i++) {
 			this.x[i] = limits * 2 * (Math.random() - 0.5);
 			this.v[i] = 2 * (Math.random() - 0.5);
@@ -49,7 +55,7 @@ export class Particle {
 	}
 	updateParticleVeloPos(g: number[]) {
 		for (let j = 0; j < this.d; j++) {
-			this.v[j] = OMEGA * this.v[j] + ALPHA1 * Math.random() * (this.p[j] - this.x[j]) + ALPHA2 * Math.random() * (g[j] - this.x[j]);
+			this.v[j] = this.omega * this.v[j] + this.alpha1 * Math.random() * (this.p[j] - this.x[j]) + this.alpha2 * Math.random() * (g[j] - this.x[j]);
 			this.x[j] += this.v[j];
 
 			if (Math.abs(this.x[j])>10.0) this.x[j] = 10.0 * (Math.random() - 0.5);
@@ -60,10 +66,14 @@ export class Particle {
 
 export class Swarm {
 	particles: Particle[] = [];
-	//part: Particle;
+	part: Particle;
 	g: number[] = []; // global best (so far) vector
 	fg: number;	  // fitness of global best
 	dim: number;
+  omega: number;
+  alpha1: number;
+  alpha2: number;
+  swrmsz: number;
 
 	updateGlobalBest(f: number, i: number){
 		if (f < this.fg) {
@@ -77,14 +87,13 @@ export class Swarm {
 	updateSwarm(network: nn.Node[][], trainData: Example2D[]): number {
 
 		let f = -1;
-
-		for (let i = 0; i < SWRMSZ; i++) {
+		for (let i = 0; i < this.swrmsz; i++) {
 			f = getFitness(network,trainData,this.particles[i].x,this.dim);
 			this.particles[i].updatePersonalBest(f);
 			this.updateGlobalBest(f,i);
 		}
 
-		for (let i = 0; i < SWRMSZ; i++) {
+		for (let i = 0; i < this.swrmsz; i++) {
 			this.particles[i].updateParticleVeloPos(this.g)
 		}
 
@@ -97,11 +106,16 @@ export class Swarm {
 	}
 }
 
-export function	buildSwarm(nnDim: number): Swarm {
-	let swrm = new Swarm;
+export function	buildSwarm(nnDim: number, o: number, a1: number, a2: number, sw: number): Swarm {
+
+  let swrm = new Swarm;
+  swrm.omega = o;
+  swrm.alpha1 = a1;
+  swrm.alpha2 = a2;
+  swrm.swrmsz = sw;
 	swrm.dim = nnDim;
-	for (let i = 0; i < SWRMSZ; i++) {
-		let part = new Particle(swrm.dim,LIMITS);
+	for (let i = 0; i < swrm.swrmsz; i++) {
+		let part = new Particle(swrm.dim, o, a1, a2, sw, LIMITS);
 		swrm.particles.push(part);
 	}
 	swrm.fg = Number.MAX_VALUE;
@@ -126,22 +140,6 @@ export function getFitness(network: nn.Node[][], trainData: Example2D[], x: numb
       total -= Math.log(output);
     }
     else total -= Math.log(1-output);
-  }
-  return total;
-}
-
-/* Fitness function using sum(|y - sigmoid(ŷ)|)  */
-export function getFitness2(network: nn.Node[][], trainData: Example2D[], x: number[], dim: number): number {
-  let nnn = nn.setWeights(network, x, dim); /* assign x to weights */
-  let total = 0;
-  for (let i = 0; i < trainData.length; i++) {
-    let dataPoint = trainData[i];
-    let input = aux.constructInput(dataPoint.x, dataPoint.y);
-    let output = nn.forwardProp(network, input);
-    let sigmoid = 1/(1 + Math.exp(-output*1000));
-    let y = dataPoint.label;
-    if (y == -1) y = 0;
-    total += Math.abs(y - sigmoid);
   }
   return total;
 }

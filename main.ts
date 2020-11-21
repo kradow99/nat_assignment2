@@ -30,13 +30,13 @@ let trainData = data.slice(0, splitIndex);
 let testData = data.slice(splitIndex);
 
 // variable parameters (the current values are only to test the code, we should change them for the task)
-let n_iter = 1000;
-let networkShape = [2, 2, 1];
+let n_iter = 4000;
+let networkShape = [6, 8, 1];
 
 let swarm = aux.runPSO(n_iter, trainData, testData, networkShape)
 
 // TASK 2: GA
-
+/*
 // Split training data again
 splitIndex = Math.floor(trainData.length * percTrainData);
 let trainDataGA = trainData.slice(0, splitIndex);
@@ -53,3 +53,5 @@ let popGP = gp.buildPop('gd');
 console.log(popGP);
 gp.oneStepGP(popGP, trainDataGA, trainData, true);
 console.log(popGP);
+
+*/
