@@ -2,16 +2,17 @@
 // Constant parameters
 
 const MAXLAYERSIZE = 2; // This refers only to the hidden layers
-const LAYERS = 2; // This refers only to the hidden layers
-const NACTIVATIONS = 6;
+const LAYERS = 3; // This refers only to the hidden layers
+const NACTIVATIONS = 5;
 const LAYERPADDING = 1;
-const MUTPROB = 0.01;
+const MUTPROB = 0.001;
 const CROSSPROB = 0.7;
 const ELITISM = true;
-const INPUTDIM = 2;
+const INPUTDIM = 5;
 const MAX_COST = 1;
-const N_ITER = 10;
-const POPSIZE = 5;
+const N_ITER = 500;
+const POPSIZE = 10;
+const PROBCONNECT = 0.999;
 import * as nn from "./nn";
 import * as aux from "./aux";
 import * as pso from "./pso";
@@ -26,16 +27,16 @@ function mapToMatrix(arrayIndex: number): number[] {
     }
     else {
         let subIndex = arrayIndex % (LAYERS * MAXLAYERSIZE + 1);
-        let rowIndex = null;
-        let colIndex = null;
-        if (subIndex % LAYERS === 0) {
-            colIndex = Math.floor(subIndex/LAYERS) - 1;
-            rowIndex = LAYERS - 1;
-        }
-        else {
-            colIndex = Math.floor(subIndex/LAYERS);
-            rowIndex = LAYERS - (LAYERS - subIndex%LAYERS) - 1;
-        }
+        let colIndex = Math.floor((subIndex - 1) / MAXLAYERSIZE);
+        let rowIndex = (subIndex - 1) % MAXLAYERSIZE;;
+        //if (subIndex % LAYERS === 0) {
+        //    colIndex = Math.floor(subIndex/LAYERS) - 1;
+        //    rowIndex = LAYERS - 1;
+        //}
+        //else {
+        //    colIndex = Math.floor(subIndex/LAYERS);
+        //    rowIndex = LAYERS - (LAYERS - subIndex%LAYERS) - 1;
+        //}
         return [rowIndex, colIndex];
     }
 }
@@ -43,6 +44,8 @@ function mapToMatrix(arrayIndex: number): number[] {
 function verifyLayer(index1: number, index2: number):boolean {
     let coord1 = mapToMatrix(index1);
     let coord2 = mapToMatrix(index2);
+    console.log(coord1);
+    console.log(coord2);
     let layer1 = coord1[1];
     let layer2 = coord2[1];
     return (layer1 - layer2) >= LAYERPADDING; 
@@ -50,7 +53,7 @@ function verifyLayer(index1: number, index2: number):boolean {
 
 function mapActivationKey (key: number): nn.ActivationFunction {
 
-    let activationArray = [nn.Activations.RELU, nn.Activations.SIGMOID, nn.Activations.LINEAR, 
+    let activationArray = [nn.Activations.RELU, nn.Activations.SIGMOID, 
         nn.Activations.SIN, nn.Activations.RBF, nn.Activations.TANH];
     return activationArray[key];
 }
@@ -106,11 +109,18 @@ export class Individual {
     constructor() {
         for(let current_node = 1; current_node <= MAXLAYERSIZE*LAYERS; current_node++){
             this.config.push(aux.getRandomInt(0, NACTIVATIONS))
-            for (let current_conn  = 1; current_conn < MAXLAYERSIZE*LAYERS; current_conn++) {
+            for (let current_conn  = 1; current_conn <= MAXLAYERSIZE*LAYERS; current_conn++) {
                 let currentConIndex = (current_node - 1)  *  (MAXLAYERSIZE*LAYERS + 1) +  current_conn;
+                console.log(current_node, currentConIndex);
+                console.log(verifyLayer(current_node, currentConIndex));
  
                 if (verifyLayer(current_node, currentConIndex)) {
-                    this.config.push(Math.round(Math.random()));
+                    if (Math.random() > PROBCONNECT) {
+                        this.config.push(0);
+                    }
+                    else {
+                        this.config.push(1);
+                    }
                 }
                 else {
                     this.config.push(0); // We only allow connections between nodes up to a LAYERPADDING difference of Layers
@@ -148,7 +158,7 @@ export class Individual {
         for (let layerIdx = 0; layerIdx < numLayers; layerIdx++) {
             let isOutputLayer = layerIdx === numLayers - 1;
             let isInputLayer = layerIdx === 0;
-            let isFirstHidden = layerIdx >= LAYERPADDING ;
+            let isFirstHidden = layerIdx <= LAYERPADDING ;
             let currentLayer: nn.Node[] = [];
             network.push(currentLayer);
             let nodeId = '';
@@ -191,7 +201,7 @@ export class Individual {
                         prevNode.outputs.push(link);
                         node.inputLinks.push(link);
                     }
-            }  
+                }  
             } else {
                 numNodes = MAXLAYERSIZE;
                 for (let i = 0; i < numNodes; i++) {
