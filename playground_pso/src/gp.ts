@@ -1,54 +1,39 @@
 /* A simple genetic algorithm and the interaction with the PSO/NN via the fitness function and the Node class */
 // Constant parameters
 
-const MAXLAYERSIZE = 2; // This refers only to the hidden layers
-const LAYERS = 3; // This refers only to the hidden layers
 const NACTIVATIONS = 5;
-const LAYERPADDING = 1;
-const MUTPROB = 0.001;
 const CROSSPROB = 0.7;
 const ELITISM = true;
-const INPUTDIM = 5;
+const INPUTDIM = 6;
 const MAX_COST = 1;
-const N_ITER = 500;
-const POPSIZE = 10;
-const PROBCONNECT = 0.999;
+const N_ITER = 1000;
+const PROBCONNECT = 0.80;
 import * as nn from "./nn";
 import * as aux from "./aux";
 import * as pso from "./pso";
 import {Example2D} from "./dataset";
 
 // Auxiliary functions
-function mapToMatrix(arrayIndex: number): number[] {
-    if(arrayIndex % (LAYERS * MAXLAYERSIZE + 1) == 0) {
+function mapToMatrix(arrayIndex: number, maxLayerSize: number, layers: number): number[] {
+    if(arrayIndex % (layers * maxLayerSize + 1) == 0) {
         //this corresponds to the case of an activation index
         console.log("Index corresponds to activation key");
         return null;
     }
     else {
-        let subIndex = arrayIndex % (LAYERS * MAXLAYERSIZE + 1);
-        let colIndex = Math.floor((subIndex - 1) / MAXLAYERSIZE);
-        let rowIndex = (subIndex - 1) % MAXLAYERSIZE;;
-        //if (subIndex % LAYERS === 0) {
-        //    colIndex = Math.floor(subIndex/LAYERS) - 1;
-        //    rowIndex = LAYERS - 1;
-        //}
-        //else {
-        //    colIndex = Math.floor(subIndex/LAYERS);
-        //    rowIndex = LAYERS - (LAYERS - subIndex%LAYERS) - 1;
-        //}
+        let subIndex = arrayIndex % (layers * maxLayerSize + 1);
+        let colIndex = Math.floor((subIndex - 1) / maxLayerSize);
+        let rowIndex = (subIndex - 1) % maxLayerSize;;
         return [rowIndex, colIndex];
     }
 }
 
-function verifyLayer(index1: number, index2: number):boolean {
-    let coord1 = mapToMatrix(index1);
-    let coord2 = mapToMatrix(index2);
-    console.log(coord1);
-    console.log(coord2);
+function verifyLayer(index1: number, index2: number, maxLayerSize: number, layers: number, connReach):boolean {
+    let coord1 = mapToMatrix(index1, maxLayerSize, layers);
+    let coord2 = mapToMatrix(index2, maxLayerSize, layers);
     let layer1 = coord1[1];
     let layer2 = coord2[1];
-    return (layer1 - layer2) >= LAYERPADDING; 
+    return (layer1 - layer2) >= connReach; 
 }
 
 function mapActivationKey (key: number): nn.ActivationFunction {
@@ -105,16 +90,21 @@ export function evaluatePopFitnessNN(individuals: Individual[], n_iter: number,
 export class Individual {
     config: number[] = [];
     phenotype: nn.Node[][];
+    maxLayerSize: number; // This refers only to the hidden layers
+    layers: number; // This refers only to the hidden layers
+    connReach: number;
+    mutProb: number;
 
-    constructor() {
-        for(let current_node = 1; current_node <= MAXLAYERSIZE*LAYERS; current_node++){
+    constructor(maxLayerSize: number, layers: number, connReach: number, mutProb: number) {
+        this.maxLayerSize = maxLayerSize;
+        this.layers = layers;
+        this.connReach = connReach;
+        this.mutProb = mutProb;
+        for(let current_node = 1; current_node <= this.maxLayerSize*this.layers; current_node++){
             this.config.push(aux.getRandomInt(0, NACTIVATIONS))
-            for (let current_conn  = 1; current_conn <= MAXLAYERSIZE*LAYERS; current_conn++) {
-                let currentConIndex = (current_node - 1)  *  (MAXLAYERSIZE*LAYERS + 1) +  current_conn;
-                console.log(current_node, currentConIndex);
-                console.log(verifyLayer(current_node, currentConIndex));
- 
-                if (verifyLayer(current_node, currentConIndex)) {
+            for (let current_conn  = 1; current_conn <= this.maxLayerSize*this.layers; current_conn++) {
+                let currentConIndex = (current_node - 1)  *  (this.maxLayerSize*this.layers + 1) +  current_conn;
+                if (verifyLayer(current_node, currentConIndex, this.maxLayerSize, this.layers, this.connReach)) {
                     if (Math.random() > PROBCONNECT) {
                         this.config.push(0);
                     }
@@ -123,7 +113,7 @@ export class Individual {
                     }
                 }
                 else {
-                    this.config.push(0); // We only allow connections between nodes up to a LAYERPADDING difference of Layers
+                    this.config.push(0); // We only allow connections between nodes up to a connReach difference of Layers
                 }
             }
         }
@@ -131,8 +121,8 @@ export class Individual {
 
     mutate() {
         for (let chromosome of this.config) {
-            if (Math.random() < MUTPROB) {
-                if (chromosome % (LAYERS * MAXLAYERSIZE + 1) == 0) { // Check if it corresponds to an activation node
+            if (Math.random() < this.mutProb) {
+                if (chromosome % (this.layers * this.maxLayerSize + 1) == 0) { // Check if it corresponds to an activation node
                     this.config[chromosome] = aux.getRandomInt(0, NACTIVATIONS);
                 }
                 else {
@@ -151,14 +141,14 @@ export class Individual {
     translate(inputActivation: nn.ActivationFunction, outputActivation: nn.ActivationFunction,
         inputIds: string[], regularization: nn.RegularizationFunction) {
     
-        let numLayers = LAYERS + 2;
+        let numLayers = this.layers + 2;
         let id = 1;
         /** List of layers, with each layer being a list of nodes. */
         let network: nn.Node[][] = [];
         for (let layerIdx = 0; layerIdx < numLayers; layerIdx++) {
             let isOutputLayer = layerIdx === numLayers - 1;
             let isInputLayer = layerIdx === 0;
-            let isFirstHidden = layerIdx <= LAYERPADDING ;
+            let isFirstHidden = layerIdx <= this.connReach ;
             let currentLayer: nn.Node[] = [];
             network.push(currentLayer);
             let nodeId = '';
@@ -186,11 +176,11 @@ export class Individual {
 
             } else if(isFirstHidden){
 
-                numNodes = MAXLAYERSIZE;
+                numNodes = this.maxLayerSize;
                 for (let i = 0; i < numNodes; i++) {
                     nodeId = id.toString();
                     id++;
-                    let activationKey = this.config[i*(MAXLAYERSIZE*LAYERS + 1)];
+                    let activationKey = this.config[i*(this.maxLayerSize*this.layers + 1)];
                     let activation = mapActivationKey(activationKey);
                     let node = new nn.Node(nodeId, activation);
                     currentLayer.push(node);
@@ -203,19 +193,19 @@ export class Individual {
                     }
                 }  
             } else {
-                numNodes = MAXLAYERSIZE;
+                numNodes = this.maxLayerSize;
                 for (let i = 0; i < numNodes; i++) {
                     nodeId = id.toString();
                     id++;
-                    let nodeArrayidx = ((layerIdx - 1)*MAXLAYERSIZE + i)*(MAXLAYERSIZE*LAYERS + 1);
+                    let nodeArrayidx = ((layerIdx - 1)*this.maxLayerSize + i)*(this.maxLayerSize*this.layers + 1);
                     let activationKey = this.config[nodeArrayidx]
                     let activation = mapActivationKey(activationKey);
                     let node = new nn.Node(nodeId, activation);
                     currentLayer.push(node);
-                    for(let k = LAYERPADDING; k > 0; k --) {
+                    for(let k = this.connReach; k > 0; k --) {
                         for (let j = 0; j < network[layerIdx - k].length; j++) {
                             let PrevLayer = layerIdx - k - 1;
-                            let arrayIndex = nodeArrayidx + (PrevLayer*MAXLAYERSIZE) + (j + 1);
+                            let arrayIndex = nodeArrayidx + (PrevLayer*this.maxLayerSize) + (j + 1);
                             let isDead = this.config[arrayIndex] === 1;
                             if (!isDead) {
                                 let prevNode = network[layerIdx - k][j];
@@ -240,6 +230,7 @@ export class Population {
     totalFit: number;
     bestFit: number;
     averageFit: number;
+    popSize: number;
 
     selection(trainData: Example2D[], valData: Example2D[]): void {
 
@@ -312,7 +303,7 @@ export class Population {
         
         let intermediatePop: Individual[] = []
         let midPoint = this.individuals.length / 2;
-        let parentPool = this.individuals.slice(midPoint - 1, POPSIZE);
+        let parentPool = this.individuals.slice(midPoint - 1, this.popSize);
         for (let parent1 of this.individuals.slice(0, midPoint)) {
             let parent2 = parentPool[Math.floor(Math.random()*parentPool.length)];
             if (Math.random() < CROSSPROB){
@@ -331,14 +322,14 @@ export class Population {
         this.individuals = intermediatePop;
     }
 
-    getBestConfig(trainData: Example2D[], valData: Example2D[]): number[] {
+    getBestIndividual(trainData: Example2D[], valData: Example2D[], iter: number): Individual {
 
         let popFitness: number[] = []
         if (this.lowLevelAlgo === 'pso') {
-            popFitness = evaluatePopFitnessPSO(this.individuals, N_ITER, trainData, valData);
+            popFitness = evaluatePopFitnessPSO(this.individuals, iter, trainData, valData);
         }
         else if (this.lowLevelAlgo === 'gd'){
-            popFitness = evaluatePopFitnessNN(this.individuals, N_ITER, trainData, valData);
+            popFitness = evaluatePopFitnessNN(this.individuals, iter, trainData, valData);
         } else {
             popFitness = null;
             console.log("Low level algorithm not recognized");
@@ -359,23 +350,25 @@ export class Population {
         })
 
         let bestIndividual = this.individuals[0]
-        console.log(popFitness);
-        console.log("Fitness: ", popFitness[tempPop.indexOf(bestIndividual)]);
-        let shape = [INPUTDIM].concat(bestIndividual.config).concat([1])
-        return shape;
+        this.bestFit = popFitness[tempPop.indexOf(bestIndividual)];
+
+        console.log("Fitness obteined by best individual: ", this.bestFit);
+        return bestIndividual;
     }
 
 }
 
-export function buildPop(lowLevelAlgo: string): Population {
+export function buildPop(lowLevelAlgo: string, popSize: number, 
+    maxLayerSize: number, layers: number, connReach: number, mutProb: number): Population {
     let pop = new Population;
+    pop.popSize = popSize;
     pop.totalFit = 0;
     pop.averageFit = 0;
     pop.bestFit = 0;
     pop.lowLevelAlgo = lowLevelAlgo;
 
-    for(let i = 0; i < POPSIZE; i++) {
-        let member = new Individual();
+    for(let i = 0; i < popSize; i++) {
+        let member = new Individual(maxLayerSize, layers, connReach, mutProb);
         pop.individuals.push(member);
     }
 

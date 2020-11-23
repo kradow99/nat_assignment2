@@ -3,52 +3,37 @@
 // Constant parameters
 exports.__esModule = true;
 exports.oneStepGP = exports.buildPop = exports.Population = exports.Individual = exports.evaluatePopFitnessNN = exports.getFitnessNN = exports.evaluatePopFitnessPSO = exports.getFitnessPSO = void 0;
-var MAXLAYERSIZE = 2; // This refers only to the hidden layers
-var LAYERS = 3; // This refers only to the hidden layers
 var NACTIVATIONS = 5;
-var LAYERPADDING = 1;
-var MUTPROB = 0.001;
 var CROSSPROB = 0.7;
 var ELITISM = true;
 var INPUTDIM = 5;
 var MAX_COST = 1;
 var N_ITER = 500;
-var POPSIZE = 10;
-var PROBCONNECT = 0.999;
+var PROBCONNECT = 0.9;
 var nn = require("./nn");
 var aux = require("./aux");
 var pso = require("./pso");
 // Auxiliary functions
-function mapToMatrix(arrayIndex) {
-    if (arrayIndex % (LAYERS * MAXLAYERSIZE + 1) == 0) {
+function mapToMatrix(arrayIndex, maxLayerSize, layers) {
+    if (arrayIndex % (layers * maxLayerSize + 1) == 0) {
         //this corresponds to the case of an activation index
         console.log("Index corresponds to activation key");
         return null;
     }
     else {
-        var subIndex = arrayIndex % (LAYERS * MAXLAYERSIZE + 1);
-        var colIndex = Math.floor((subIndex - 1) / MAXLAYERSIZE);
-        var rowIndex = (subIndex - 1) % MAXLAYERSIZE;
+        var subIndex = arrayIndex % (layers * maxLayerSize + 1);
+        var colIndex = Math.floor((subIndex - 1) / maxLayerSize);
+        var rowIndex = (subIndex - 1) % maxLayerSize;
         ;
-        //if (subIndex % LAYERS === 0) {
-        //    colIndex = Math.floor(subIndex/LAYERS) - 1;
-        //    rowIndex = LAYERS - 1;
-        //}
-        //else {
-        //    colIndex = Math.floor(subIndex/LAYERS);
-        //    rowIndex = LAYERS - (LAYERS - subIndex%LAYERS) - 1;
-        //}
         return [rowIndex, colIndex];
     }
 }
-function verifyLayer(index1, index2) {
-    var coord1 = mapToMatrix(index1);
-    var coord2 = mapToMatrix(index2);
-    console.log(coord1);
-    console.log(coord2);
+function verifyLayer(index1, index2, maxLayerSize, layers, connReach) {
+    var coord1 = mapToMatrix(index1, maxLayerSize, layers);
+    var coord2 = mapToMatrix(index2, maxLayerSize, layers);
     var layer1 = coord1[1];
     var layer2 = coord2[1];
-    return (layer1 - layer2) >= LAYERPADDING;
+    return (layer1 - layer2) >= connReach;
 }
 function mapActivationKey(key) {
     var activationArray = [nn.Activations.RELU, nn.Activations.SIGMOID,
@@ -96,15 +81,17 @@ function evaluatePopFitnessNN(individuals, n_iter, trainData, valData) {
 }
 exports.evaluatePopFitnessNN = evaluatePopFitnessNN;
 var Individual = /** @class */ (function () {
-    function Individual() {
+    function Individual(maxLayerSize, layers, connReach, mutProb) {
         this.config = [];
-        for (var current_node = 1; current_node <= MAXLAYERSIZE * LAYERS; current_node++) {
+        this.maxLayerSize = maxLayerSize;
+        this.layers = layers;
+        this.connReach = connReach;
+        this.mutProb = mutProb;
+        for (var current_node = 1; current_node <= this.maxLayerSize * this.layers; current_node++) {
             this.config.push(aux.getRandomInt(0, NACTIVATIONS));
-            for (var current_conn = 1; current_conn <= MAXLAYERSIZE * LAYERS; current_conn++) {
-                var currentConIndex = (current_node - 1) * (MAXLAYERSIZE * LAYERS + 1) + current_conn;
-                console.log(current_node, currentConIndex);
-                console.log(verifyLayer(current_node, currentConIndex));
-                if (verifyLayer(current_node, currentConIndex)) {
+            for (var current_conn = 1; current_conn <= this.maxLayerSize * this.layers; current_conn++) {
+                var currentConIndex = (current_node - 1) * (this.maxLayerSize * this.layers + 1) + current_conn;
+                if (verifyLayer(current_node, currentConIndex, this.maxLayerSize, this.layers, this.connReach)) {
                     if (Math.random() > PROBCONNECT) {
                         this.config.push(0);
                     }
@@ -113,7 +100,7 @@ var Individual = /** @class */ (function () {
                     }
                 }
                 else {
-                    this.config.push(0); // We only allow connections between nodes up to a LAYERPADDING difference of Layers
+                    this.config.push(0); // We only allow connections between nodes up to a connReach difference of Layers
                 }
             }
         }
@@ -121,8 +108,8 @@ var Individual = /** @class */ (function () {
     Individual.prototype.mutate = function () {
         for (var _i = 0, _a = this.config; _i < _a.length; _i++) {
             var chromosome = _a[_i];
-            if (Math.random() < MUTPROB) {
-                if (chromosome % (LAYERS * MAXLAYERSIZE + 1) == 0) { // Check if it corresponds to an activation node
+            if (Math.random() < this.mutProb) {
+                if (chromosome % (this.layers * this.maxLayerSize + 1) == 0) { // Check if it corresponds to an activation node
                     this.config[chromosome] = aux.getRandomInt(0, NACTIVATIONS);
                 }
                 else {
@@ -138,14 +125,14 @@ var Individual = /** @class */ (function () {
     };
     // Largely based on nn.buildNetwork but allowing different activation function for each unit
     Individual.prototype.translate = function (inputActivation, outputActivation, inputIds, regularization) {
-        var numLayers = LAYERS + 2;
+        var numLayers = this.layers + 2;
         var id = 1;
         /** List of layers, with each layer being a list of nodes. */
         var network = [];
         for (var layerIdx = 0; layerIdx < numLayers; layerIdx++) {
             var isOutputLayer = layerIdx === numLayers - 1;
             var isInputLayer = layerIdx === 0;
-            var isFirstHidden = layerIdx <= LAYERPADDING;
+            var isFirstHidden = layerIdx <= this.connReach;
             var currentLayer = [];
             network.push(currentLayer);
             var nodeId = '';
@@ -172,11 +159,11 @@ var Individual = /** @class */ (function () {
                 }
             }
             else if (isFirstHidden) {
-                numNodes = MAXLAYERSIZE;
+                numNodes = this.maxLayerSize;
                 for (var i = 0; i < numNodes; i++) {
                     nodeId = id.toString();
                     id++;
-                    var activationKey = this.config[i * (MAXLAYERSIZE * LAYERS + 1)];
+                    var activationKey = this.config[i * (this.maxLayerSize * this.layers + 1)];
                     var activation = mapActivationKey(activationKey);
                     var node = new nn.Node(nodeId, activation);
                     currentLayer.push(node);
@@ -190,19 +177,19 @@ var Individual = /** @class */ (function () {
                 }
             }
             else {
-                numNodes = MAXLAYERSIZE;
+                numNodes = this.maxLayerSize;
                 for (var i = 0; i < numNodes; i++) {
                     nodeId = id.toString();
                     id++;
-                    var nodeArrayidx = ((layerIdx - 1) * MAXLAYERSIZE + i) * (MAXLAYERSIZE * LAYERS + 1);
+                    var nodeArrayidx = ((layerIdx - 1) * this.maxLayerSize + i) * (this.maxLayerSize * this.layers + 1);
                     var activationKey = this.config[nodeArrayidx];
                     var activation = mapActivationKey(activationKey);
                     var node = new nn.Node(nodeId, activation);
                     currentLayer.push(node);
-                    for (var k = LAYERPADDING; k > 0; k--) {
+                    for (var k = this.connReach; k > 0; k--) {
                         for (var j = 0; j < network[layerIdx - k].length; j++) {
                             var PrevLayer = layerIdx - k - 1;
-                            var arrayIndex = nodeArrayidx + (PrevLayer * MAXLAYERSIZE) + (j + 1);
+                            var arrayIndex = nodeArrayidx + (PrevLayer * this.maxLayerSize) + (j + 1);
                             var isDead = this.config[arrayIndex] === 1;
                             if (!isDead) {
                                 var prevNode = network[layerIdx - k][j];
@@ -289,7 +276,7 @@ var Population = /** @class */ (function () {
     Population.prototype.crossover = function () {
         var intermediatePop = [];
         var midPoint = this.individuals.length / 2;
-        var parentPool = this.individuals.slice(midPoint - 1, POPSIZE);
+        var parentPool = this.individuals.slice(midPoint - 1, this.popSize);
         for (var _i = 0, _a = this.individuals.slice(0, midPoint); _i < _a.length; _i++) {
             var parent1 = _a[_i];
             var parent2 = parentPool[Math.floor(Math.random() * parentPool.length)];
@@ -308,13 +295,13 @@ var Population = /** @class */ (function () {
         }
         this.individuals = intermediatePop;
     };
-    Population.prototype.getBestConfig = function (trainData, valData) {
+    Population.prototype.getBestIndividual = function (trainData, valData, iter) {
         var popFitness = [];
         if (this.lowLevelAlgo === 'pso') {
-            popFitness = evaluatePopFitnessPSO(this.individuals, N_ITER, trainData, valData);
+            popFitness = evaluatePopFitnessPSO(this.individuals, iter, trainData, valData);
         }
         else if (this.lowLevelAlgo === 'gd') {
-            popFitness = evaluatePopFitnessNN(this.individuals, N_ITER, trainData, valData);
+            popFitness = evaluatePopFitnessNN(this.individuals, iter, trainData, valData);
         }
         else {
             popFitness = null;
@@ -333,22 +320,22 @@ var Population = /** @class */ (function () {
             return 0;
         });
         var bestIndividual = this.individuals[0];
-        console.log(popFitness);
-        console.log("Fitness: ", popFitness[tempPop.indexOf(bestIndividual)]);
-        var shape = [INPUTDIM].concat(bestIndividual.config).concat([1]);
-        return shape;
+        this.bestFit = popFitness[tempPop.indexOf(bestIndividual)];
+        console.log("Fitness obteined by best individual: ", this.bestFit);
+        return bestIndividual;
     };
     return Population;
 }());
 exports.Population = Population;
-function buildPop(lowLevelAlgo) {
+function buildPop(lowLevelAlgo, popSize, maxLayerSize, layers, connReach, mutProb) {
     var pop = new Population;
+    pop.popSize = popSize;
     pop.totalFit = 0;
     pop.averageFit = 0;
     pop.bestFit = 0;
     pop.lowLevelAlgo = lowLevelAlgo;
-    for (var i = 0; i < POPSIZE; i++) {
-        var member = new Individual();
+    for (var i = 0; i < popSize; i++) {
+        var member = new Individual(maxLayerSize, layers, connReach, mutProb);
         pop.individuals.push(member);
     }
     return pop;

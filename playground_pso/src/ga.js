@@ -3,13 +3,10 @@ exports.__esModule = true;
 exports.oneStepGA = exports.buildPop = exports.Population = exports.Individual = exports.evaluatePopFitnessNN = exports.getFitnessNN = exports.evaluatePopFitnessPSO = exports.getFitnessPSO = exports.buildNNFromGA = void 0;
 /* A simple genetic algorithm and the interaction with the PSO/NN via the fitness function */
 // Constant parametetrs
-var POPSIZE = 5;
-var CROSSPROB = 0.7;
-var MUTPROB = 0.01;
 var ELITISM = true;
-var N_ITER = 100; // this is for the low leveel algorithm not for the GA
+var N_ITER = 100; // this is for the low level algorithm not for the GA
 var MAX_COST = 1;
-var INPUTDIM = 2;
+var INPUTDIM = 6;
 var pso = require("./pso");
 var nn = require("./nn");
 var aux = require("./aux");
@@ -62,20 +59,21 @@ function evaluatePopFitnessNN(individuals, n_iter, trainData, valData) {
 exports.evaluatePopFitnessNN = evaluatePopFitnessNN;
 // Class for the individual of the population
 var Individual = /** @class */ (function () {
-    function Individual(dim, min_ranges, max_ranges) {
+    function Individual(dim, min_ranges, max_ranges, mutProb) {
         this.config = [];
         this.min_ranges = [];
         this.max_ranges = [];
         this.dim = dim;
         this.min_ranges = min_ranges;
         this.max_ranges = max_ranges;
+        this.mutProb = mutProb;
         for (var i = 0; i < this.dim; i++) {
             this.config.push(aux.getRandomInt(this.min_ranges[i], this.max_ranges[i]));
         }
     }
     Individual.prototype.mutate = function () {
         for (var chromosome in this.config) {
-            if (Math.random() < MUTPROB) {
+            if (Math.random() < this.mutProb) {
                 this.config[chromosome] = aux.getRandomInt(this.min_ranges[chromosome], this.max_ranges[chromosome]);
             }
         }
@@ -152,11 +150,11 @@ var Population = /** @class */ (function () {
     Population.prototype.crossover = function () {
         var intermediatePop = [];
         var midPoint = this.individuals.length / 2;
-        var parentPool = this.individuals.slice(midPoint - 1, POPSIZE);
+        var parentPool = this.individuals.slice(midPoint - 1, this.individuals.length);
         for (var _i = 0, _a = this.individuals.slice(0, midPoint); _i < _a.length; _i++) {
             var parent1 = _a[_i];
             var parent2 = parentPool[Math.floor(Math.random() * parentPool.length)];
-            if (Math.random() < CROSSPROB) {
+            if (Math.random() < this.crossProb) {
                 var crossOverPoint = aux.getRandomInt(0, parent1.dim - 1);
                 for (var chromosome = crossOverPoint; chromosome < parent1.dim; chromosome++) {
                     var temp1 = parent1.config[chromosome];
@@ -196,7 +194,6 @@ var Population = /** @class */ (function () {
             return 0;
         });
         var bestIndividual = this.individuals[0];
-        console.log(popFitness);
         console.log("Fitness: ", popFitness[tempPop.indexOf(bestIndividual)]);
         var shape = [INPUTDIM].concat(bestIndividual.config).concat([1]);
         return shape;
@@ -204,14 +201,14 @@ var Population = /** @class */ (function () {
     return Population;
 }());
 exports.Population = Population;
-function buildPop(dim, min_ranges, max_ranges, lowLevelAlgo) {
+function buildPop(dim, min_ranges, max_ranges, lowLevelAlgo, popSize, mutProb) {
     var pop = new Population;
     pop.totalFit = 0;
     pop.averageFit = 0;
     pop.bestFit = 0;
     pop.lowLevelAlgo = lowLevelAlgo;
-    for (var i = 0; i < POPSIZE; i++) {
-        var member = new Individual(dim, min_ranges, max_ranges);
+    for (var i = 0; i < popSize; i++) {
+        var member = new Individual(dim, min_ranges, max_ranges, mutProb);
         pop.individuals.push(member);
     }
     return pop;

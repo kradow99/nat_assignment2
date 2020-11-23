@@ -1,12 +1,9 @@
 /* A simple genetic algorithm and the interaction with the PSO/NN via the fitness function */
 // Constant parametetrs
-const POPSIZE = 5;
-const CROSSPROB = 0.7;
-const MUTPROB = 0.01;
 const ELITISM = true;
-const N_ITER = 100; // this is for the low leveel algorithm not for the GA
+const N_ITER = 1000; // this is for the low level algorithm not for the GA
 const MAX_COST = 1;
-const INPUTDIM = 2;
+const INPUTDIM = 6;
 import * as pso from "./pso";
 import * as nn from "./nn";
 import {Example2D} from "./dataset";
@@ -70,11 +67,13 @@ export class Individual {
     dim: number;
     min_ranges: number[] = [];
     max_ranges: number[] = [];
+    mutProb: number;
 
-    constructor(dim: number, min_ranges: number[], max_ranges: number[]) {
+    constructor(dim: number, min_ranges: number[], max_ranges: number[], mutProb: number) {
         this.dim = dim;
         this.min_ranges = min_ranges;
         this.max_ranges = max_ranges;
+        this.mutProb = mutProb;
         for(let i = 0; i < this.dim; i++) {
             this.config.push(aux.getRandomInt(this.min_ranges[i], this.max_ranges[i]))
         } 
@@ -82,7 +81,7 @@ export class Individual {
 
     mutate() {
         for(let chromosome in this.config){
-            if (Math.random() < MUTPROB) {
+            if (Math.random() < this.mutProb) {
                 this.config[chromosome] = aux.getRandomInt(this.min_ranges[chromosome], this.max_ranges[chromosome])
             }
         }
@@ -95,6 +94,7 @@ export class Population {
     totalFit: number;
     bestFit: number;
     averageFit: number;
+    crossProb: number;
 
     selection(trainData: Example2D[], valData: Example2D[]): void {
 
@@ -167,10 +167,10 @@ export class Population {
         
         let intermediatePop: Individual[] = []
         let midPoint = this.individuals.length / 2;
-        let parentPool = this.individuals.slice(midPoint - 1, POPSIZE);
+        let parentPool = this.individuals.slice(midPoint - 1, this.individuals.length);
         for (let parent1 of this.individuals.slice(0, midPoint)) {
             let parent2 = parentPool[Math.floor(Math.random()*parentPool.length)];
-            if (Math.random() < CROSSPROB){
+            if (Math.random() < this.crossProb){
                 let crossOverPoint = aux.getRandomInt(0, parent1.dim - 1);
                 for(let chromosome = crossOverPoint; chromosome < parent1.dim; chromosome++){
                     let temp1 = parent1.config[chromosome];
@@ -214,7 +214,6 @@ export class Population {
         })
 
         let bestIndividual = this.individuals[0]
-        console.log(popFitness);
         console.log("Fitness: ", popFitness[tempPop.indexOf(bestIndividual)]);
         let shape = [INPUTDIM].concat(bestIndividual.config).concat([1])
         return shape;
@@ -222,15 +221,16 @@ export class Population {
 
 }
 
-export function buildPop(dim: number, min_ranges: number[], max_ranges: number[], lowLevelAlgo: string): Population {
+export function buildPop(dim: number, min_ranges: number[], 
+    max_ranges: number[], lowLevelAlgo: string, popSize: number, mutProb: number): Population {
     let pop = new Population;
     pop.totalFit = 0;
     pop.averageFit = 0;
     pop.bestFit = 0;
     pop.lowLevelAlgo = lowLevelAlgo;
 
-    for(let i = 0; i < POPSIZE; i++) {
-        let member = new Individual(dim, min_ranges, max_ranges);
+    for(let i = 0; i < popSize; i++) {
+        let member = new Individual(dim, min_ranges, max_ranges, mutProb);
         pop.individuals.push(member);
     }
 
