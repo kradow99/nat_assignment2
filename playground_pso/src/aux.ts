@@ -21,6 +21,34 @@ export function loadDataFile(path:string): Example2D[] {
   }
   return points;
 }
+
+export function writeExperimentResults(parameters, results, 
+  filename: string, paramName: string, includeConfig: boolean) {
+  let file = fs.createWriteStream(filename);
+  file.on('error', function(err) { console.log("Error in writing") });
+  for (let i in parameters) {
+    let paramValue = String(parameters[i]);
+    let error = results[i][1];
+    if (includeConfig) {
+      file.write(paramName +  " : "  + paramValue + ",  Square error: " + error 
+      + "Config" + String(results[i][0]) + "\n");
+    } else {
+      file.write(paramName +  " : "  + paramValue + ",  Square error: " + error + "\n");
+    }
+  }
+  file.end();
+}
+
+export function writeValue(value, label, filename) {
+
+  let message = label + " : " + String(value);
+  fs.writeFile(filename, message, function (err) {
+    if (err) return console.log(err);
+    console.log("Result written");
+  })
+
+}
+
 export function getRandomInt(min: number, max: number): number {
     return Math.floor(Math.random() * (max - min)) + min;
 }
@@ -56,11 +84,11 @@ export function constructInputIds(): string[] {
 let INPUTS: {[name: string]: InputFeature} = {
     "x": {f: (x, y) => x, label: "X_1"},
     "y": {f: (x, y) => y, label: "X_2"},
-    //"xSquared": {f: (x, y) => x * x, label: "X_1^2"},
-    //"ySquared": {f: (x, y) => y * y,  label: "X_2^2"},
+    "xSquared": {f: (x, y) => x * x, label: "X_1^2"},
+    "ySquared": {f: (x, y) => y * y,  label: "X_2^2"},
     //"xTimesY": {f: (x, y) => x * y, label: "X_1X_2"},
-    //"sinX": {f: (x, y) => Math.sin(x), label: "sin(X_1)"},
-    //"sinY": {f: (x, y) => Math.sin(y), label: "sin(X_2)"},
+    "sinX": {f: (x, y) => Math.sin(x), label: "sin(X_1)"},
+    "sinY": {f: (x, y) => Math.sin(y), label: "sin(X_2)"},
 };
 
   interface InputFeature {
