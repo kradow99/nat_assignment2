@@ -32,3 +32,4 @@ let testData = data.slice(splitIndex);
 //let networkShape = [2, 2, 1];
 
 //let swarm = aux.runPSO(n_iter, trainData, testData, networkShape)
+
