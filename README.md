@@ -36,9 +36,9 @@ then, run:
 
 `node pso_param_opt.js`
 
-The output are 3 lines for each parameters combination. The first one, are the parameters themselves (`omega`, `alpha1` and `alpha2`) The second one are the fitness, training loss and test loss for the best execution of the PSO achieved (by default, the script runs `n = 20` PSOs with each parameter combination). The third line is the same as the second one but with the mean values of all the `n` runs.
+The output are 3 lines for each parameters combination. The first one, is the parameters themselves (`omega`, `alpha1` and `alpha2`) The second one is the fitness, training loss and test loss for the best execution of the PSO achieved (by default, the script runs `n = 20` PSOs with each parameter combination). The third line is the same as the second one but with the mean values of all the `n` runs.
 
-To see a graphical representation of the results, please save the output in a file:
+To see a graphical representation of the results in a heatmap format, please save the output in a file:
 
 `node pso_param_opt.js > output.dat`
 
