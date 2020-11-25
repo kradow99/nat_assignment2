@@ -1,7 +1,7 @@
 /* A simple PSO algorithm and the interaction with the NN via the fitness function */
 const OMEGA = 0.8;
-const ALPHA1 = 0.5;
-const ALPHA2 = 0.5;
+const ALPHA1 = 1.0;
+const ALPHA2 = 1.8;
 const SWRMSZ = 10;
 const LIMITS = 0.5; // initialisation is within [-LIMITS,LIMITS]^dim
 
