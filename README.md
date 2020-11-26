@@ -52,4 +52,38 @@ Note that for good relaible results, this procces is time expensive, since a lot
 
 ## Task 2: Genetic Algorithm
 
+To run the set of experiments for task 2, first compile:
+
+`tsc ga_experiments.ts`
+
+then run:
+
+`node ga_experiments.js `
+
+This will write all the results to .txt files which you can then check for the results.
+
+The final tests for this task were performed on the browser, but the report contains the necessary specifications to run them.
+
+We uploaded all the .txt files with the results that we used for the report under the folder results, note that running the experiments again will write new ones them with potentially different results.
+
 ## Task 3: Genetic Programming
+
+To run the set of experiments for task 3, first compile:
+
+`tsc gp_experiments.ts`
+
+then run:
+
+`node gp_experiments.js `
+
+This will write all the results to .txt files which you can then check for the results.
+
+To generate the connections heatmap, you should run:
+
+`python gp_config_chart.py`
+
+which will create a .ps file with the image
+
+We uploaded all the .txt files with the results that we used for the report under the folder results, note that running the experiments again will write new ones them with potentially different results.
+
+Note: The compilation step can be avoided and you can alternatively run directly the .js files on a JavaScript console.
